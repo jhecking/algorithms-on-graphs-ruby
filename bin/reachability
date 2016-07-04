@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby -w
+require './lib/graph'
+
+File.open(ARGV.first) do |data|
+  graph = Graph.load(data)
+  (from, to) = data.readline.split.map(&:to_i)
+  puts graph.reachable?(from, to) ? "1" : "0"
+end

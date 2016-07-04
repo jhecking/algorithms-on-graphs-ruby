@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby -w
+require './lib/graph'
+
+File.open(ARGV.first) do |data|
+  graph = Graph.load(data)
+  puts graph.connected_components.length
+end
