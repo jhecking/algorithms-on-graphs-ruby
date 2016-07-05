@@ -44,6 +44,24 @@ class Graph
     postvisit.call(v) if postvisit
   end
 
+  def distances_from(s)
+    dist = {}
+    self.vertices.each do |v|
+      dist[v] = -1
+    end
+    dist[s] = 0
+    queue = [s]
+    while (u = queue.shift) do
+      self.adjacencies[u].each do |v|
+        if dist[v] < 0
+          queue << v
+          dist[v] = dist[u] + 1
+        end
+      end
+    end
+    dist
+  end
+
   def reachable?(from, to)
     explore(from, previsit: Proc.new { |v| return true if v == to }) or false
   end
@@ -58,6 +76,10 @@ class Graph
       components << component
     end
     components
+  end
+
+  def min_path_length(from, to)
+    distances_from(from)[to]
   end
 
 end
