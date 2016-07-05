@@ -44,15 +44,19 @@ class Graph
     postvisit.call(v) if postvisit
   end
 
-  def bfs(s, preprocess: nil, discovered: nil)
-    visited = Set.new([s])
-    queue = [s]
-    while (u = queue.shift) do
-      preprocess.call(u) if preprocess
-      self.adjacencies[u].each do |v|
-        next unless visited.add?(v)
-        queue << v
-        discovered.call(v) if discovered
+  def search(order: :bfs, start: self.vertices, seed: nil, preprocess: nil, discovered: nil)
+    visited = Set.new()
+    Array(start).each do |s|
+      next unless visited.add?(s)
+      seed.call(s) if seed
+      queue = [s]
+      while (u = queue.shift) do
+        preprocess.call(u) if preprocess
+        self.adjacencies[u].each do |v|
+          next unless visited.add?(v)
+          queue.insert(order == :bfs ? -1 : 0, v)
+          discovered.call(v) if discovered
+        end
       end
     end
   end
@@ -70,7 +74,7 @@ class Graph
   def shortest_path(s, t)
     curr = s
     prev = {}
-    bfs(s, 
+    search(order: :bfs, start: s,
         preprocess: -> (v) { curr = v },
         discovered: -> (v) { prev[v] = curr })
 
@@ -86,30 +90,30 @@ class Graph
   end
 
   def distances_from(s)
-    dist = {s => 0}
+    dist = {}
     self.vertices.each do |v|
       dist[v] ||= -1
     end
+    dist[s] = 0
     current_dist = 0
-    bfs(s,
-        preprocess: -> (v) { current_dist = dist[v] },
-        discovered: -> (v) { dist[v] = current_dist + 1 })
+    search(order: :bfs, start: s,
+      preprocess: -> (v) { current_dist = dist[v] },
+      discovered: -> (v) { dist[v] = current_dist + 1 })
     dist
   end
 
   def reachable?(s, t)
-    explore(s, previsit: Proc.new { |v| return true if v == t }) or false
+    search(order: :dfs, start: s,
+      discovered: Proc.new { |v| return true if v == t })
+    return false
   end
 
   def connected_components
-    visited = Set.new
     components = Set.new
-    self.vertices.each do |v|
-      next if visited.member?(v)
-      component = Set.new
-      explore(v, visited: visited, previsit: -> (w) { component << w })
-      components << component
-    end
+    curr = nil
+    search(order: :dfs,
+      seed: -> (v) { curr = Set.new([v]); components << curr },
+      discovered: -> (v) { curr << v })
     components
   end
 

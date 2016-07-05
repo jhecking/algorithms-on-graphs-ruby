@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby -w
+require './lib/graph'
+
+File.open(ARGV.shift) do |data|
+  order = ARGV.shift.to_sym
+  directed = (ARGV.shift == "true")
+  start = ARGV.shift
+  graph = Graph.load(data, directed)
+  path = []
+  if start
+    graph.search(order: order, start: start.to_i, preprocess: -> (v) { path << v })
+  else
+    graph.search(order: order, preprocess: -> (v) { path << v })
+  end
+  puts path.join(' -> ')
+end
