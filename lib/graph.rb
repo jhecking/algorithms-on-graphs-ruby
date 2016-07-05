@@ -44,17 +44,18 @@ class Graph
     postvisit.call(v) if postvisit
   end
 
-  def search(order: :bfs, start: self.vertices, seed: nil, preprocess: nil, discovered: nil)
+  def search(order: :breadth_first, start: self.vertices, seed: nil, preprocess: nil, discovered: nil)
     visited = Set.new()
+    pending = Pending.new(order == :breadth_first ? :queue : :stack)
     Array(start).each do |s|
       next unless visited.add?(s)
       seed.call(s) if seed
-      queue = [s]
-      while (u = queue.shift) do
+      pending.put(s)
+      while (u = pending.take) do
         preprocess.call(u) if preprocess
         self.adjacencies[u].each do |v|
           next unless visited.add?(v)
-          queue.insert(order == :bfs ? -1 : 0, v)
+          pending.put(v)
           discovered.call(v) if discovered
         end
       end
@@ -74,7 +75,7 @@ class Graph
   def shortest_path(s, t)
     curr = s
     prev = {}
-    search(order: :bfs, start: s,
+    search(order: :breadth_first, start: s,
         preprocess: -> (v) { curr = v },
         discovered: -> (v) { prev[v] = curr })
 
@@ -96,14 +97,14 @@ class Graph
     end
     dist[s] = 0
     current_dist = 0
-    search(order: :bfs, start: s,
+    search(order: :breadth_first, start: s,
       preprocess: -> (v) { current_dist = dist[v] },
       discovered: -> (v) { dist[v] = current_dist + 1 })
     dist
   end
 
   def reachable?(s, t)
-    search(order: :dfs, start: s,
+    search(order: :depth_first, start: s,
       discovered: Proc.new { |v| return true if v == t })
     return false
   end
@@ -111,10 +112,34 @@ class Graph
   def connected_components
     components = Set.new
     curr = nil
-    search(order: :dfs,
+    search(order: :depth_first,
       seed: -> (v) { curr = Set.new([v]); components << curr },
       discovered: -> (v) { curr << v })
     components
+  end
+
+  # simple list data structure that can switch between
+  # queue and stack insert order, i.e. first-in/first-out
+  # vs. last-in/first-out
+  class Pending
+    def initialize(mode)
+      @list = []
+      @mode = mode
+      # insert position for new elements
+      @pos = (mode == :queue) ? -1 : 0
+    end
+
+    def take
+      @list.shift
+    end
+
+    def put(e)
+      @list.insert(@pos, e)
+    end
+
+    def to_s
+      "<#{@mode}: #{@list}>"
+    end
   end
 
 end
