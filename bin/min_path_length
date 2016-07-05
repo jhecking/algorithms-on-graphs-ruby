@@ -4,5 +4,6 @@ require './lib/graph'
 File.open(ARGV.first) do |data|
   graph = Graph.load(data)
   (from, to) = data.readline.split.map(&:to_i)
-  puts graph.min_path_length(from, to)
+  path = graph.shortest_path(from, to)
+  puts (path && path.length) || -1
 end

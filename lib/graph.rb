@@ -44,6 +44,19 @@ class Graph
     postvisit.call(v) if postvisit
   end
 
+  def bfs(s, preprocess: nil, discovered: nil)
+    visited = Set.new([s])
+    queue = [s]
+    while (u = queue.shift) do
+      preprocess.call(u) if preprocess
+      self.adjacencies[u].each do |v|
+        next unless visited.add?(v)
+        queue << v
+        discovered.call(v) if discovered
+      end
+    end
+  end
+
   def toposort
     visited = Set.new
     topo = []
@@ -54,26 +67,38 @@ class Graph
     topo
   end
 
+  def shortest_path(s, t)
+    curr = s
+    prev = {}
+    bfs(s, 
+        preprocess: -> (v) { curr = v },
+        discovered: -> (v) { prev[v] = curr })
+
+    # return early if t is not reachable from s
+    return nil unless prev[t]
+
+    path = []
+    while t != s do
+      path.unshift(t)
+      t = prev[t]
+    end
+    path
+  end
+
   def distances_from(s)
-    dist = {}
+    dist = {s => 0}
     self.vertices.each do |v|
-      dist[v] = -1
+      dist[v] ||= -1
     end
-    dist[s] = 0
-    queue = [s]
-    while (u = queue.shift) do
-      self.adjacencies[u].each do |v|
-        if dist[v] < 0
-          queue << v
-          dist[v] = dist[u] + 1
-        end
-      end
-    end
+    current_dist = 0
+    bfs(s,
+        preprocess: -> (v) { current_dist = dist[v] },
+        discovered: -> (v) { dist[v] = current_dist + 1 })
     dist
   end
 
-  def reachable?(from, to)
-    explore(from, previsit: Proc.new { |v| return true if v == to }) or false
+  def reachable?(s, t)
+    explore(s, previsit: Proc.new { |v| return true if v == t }) or false
   end
 
   def connected_components
@@ -86,10 +111,6 @@ class Graph
       components << component
     end
     components
-  end
-
-  def min_path_length(from, to)
-    distances_from(from)[to]
   end
 
 end

@@ -48,6 +48,41 @@ EOT
     end
   end
 
+  describe '#shortest_path' do
+    it 'returns the shortest path from s to t' do
+      subject = described_class.load StringIO.new <<EOT
+4 4
+1 2
+4 1
+2 3
+3 1
+EOT
+      expect(subject.shortest_path(2, 4)).to eql([1, 4])
+    end
+
+    it 'returns empty path for s -> s' do
+      subject = described_class.load StringIO.new <<EOT
+4 4
+1 2
+4 1
+2 3
+3 1
+EOT
+      expect(subject.shortest_path(2, 2)).to be(nil)
+    end
+
+    it 'returns nil if t is not reachable from s' do
+      subject = described_class.load StringIO.new <<EOT
+5 4
+5 2
+1 3
+3 4
+1 4
+EOT
+      expect(subject.shortest_path(3, 2)).to be(nil)
+    end
+  end
+
   describe '#distances_from' do
     it 'returns the distances from s' do
       subject = described_class.load StringIO.new <<EOT
