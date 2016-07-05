@@ -34,50 +34,44 @@ class Graph
     end
   end
 
-  def explore(v, visited: Set.new, previsit: nil, postvisit: nil)
-    visited << v
-    previsit.call(v) if previsit
-    self.adjacencies[v].each do |w|
-      next if visited.member?(w)
-      explore(w, visited: visited, previsit: previsit, postvisit: postvisit)
-    end
-    postvisit.call(v) if postvisit
-  end
-
-  def search(order: :breadth_first, start: self.vertices, seed: nil, preprocess: nil, discovered: nil)
+  def walk(order: :breadth_first, start: self.vertices,
+           previsit: nil, visit: nil, postvisit: nil)
     visited = Set.new()
     pending = Pending.new(order == :breadth_first ? :queue : :stack)
+    postorder = Pending.new(:stack)
     Array(start).each do |s|
       next unless visited.add?(s)
-      seed.call(s) if seed
+      previsit.call(s, true) if previsit
       pending.put(s)
+      postorder.put(s) if postvisit
       while (u = pending.take) do
-        preprocess.call(u) if preprocess
+        visit.call(u) if visit
         self.adjacencies[u].each do |v|
           next unless visited.add?(v)
+          previsit.call(v, false) if previsit
           pending.put(v)
-          discovered.call(v) if discovered
+          postorder.put(v) if postvisit
         end
+      end
+      while (v = postorder.take) do
+        postvisit.call(v)
       end
     end
   end
 
   def toposort
-    visited = Set.new
     topo = []
-    self.vertices.each do |v|
-      next if visited.member?(v)
-      explore(v, visited: visited, postvisit: -> (w) { topo.unshift(w) })
-    end
+    walk(order: :depth_first,
+         postvisit: -> (v) { topo.unshift(v) })
     topo
   end
 
   def shortest_path(s, t)
     curr = s
     prev = {}
-    search(order: :breadth_first, start: s,
-        preprocess: -> (v) { curr = v },
-        discovered: -> (v) { prev[v] = curr })
+    walk(order: :breadth_first, start: s,
+        visit: -> (v) { curr = v },
+        previsit: -> (v, seed) { prev[v] = curr unless seed })
 
     # return early if t is not reachable from s
     return nil unless prev[t]
@@ -97,24 +91,23 @@ class Graph
     end
     dist[s] = 0
     current_dist = 0
-    search(order: :breadth_first, start: s,
-      preprocess: -> (v) { current_dist = dist[v] },
-      discovered: -> (v) { dist[v] = current_dist + 1 })
+    walk(order: :breadth_first, start: s,
+      visit: -> (v) { current_dist = dist[v] },
+      previsit: -> (v, seed) { dist[v] = current_dist + 1 unless seed })
     dist
   end
 
   def reachable?(s, t)
-    search(order: :depth_first, start: s,
-      discovered: Proc.new { |v| return true if v == t })
+    walk(order: :depth_first, start: s,
+      previsit: Proc.new { |v| return true if v == t })
     return false
   end
 
   def connected_components
     components = Set.new
     curr = nil
-    search(order: :depth_first,
-      seed: -> (v) { curr = Set.new([v]); components << curr },
-      discovered: -> (v) { curr << v })
+    walk(order: :depth_first,
+      previsit: -> (v, seed) { components << (curr = Set.new) if seed; curr << v })
     components
   end
 
