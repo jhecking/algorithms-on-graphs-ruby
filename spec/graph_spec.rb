@@ -35,6 +35,19 @@ EOT
     end
   end
 
+  describe '#toposort' do
+    it 'returns the vertices in topological order' do
+      data = StringIO.new <<EOT
+4 3
+1 2
+4 1
+3 1
+EOT
+      subject = Graph.load(data, true)
+      expect(subject.toposort).to eql([4, 3, 1, 2])
+    end
+  end
+
   describe '#distances_from' do
     it 'returns the distances from s' do
       subject = described_class.load StringIO.new <<EOT
