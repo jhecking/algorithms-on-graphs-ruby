@@ -49,9 +49,9 @@ class Graph
     topo = []
     self.vertices.each do |v|
       next if visited.member?(v)
-      explore(v, visited: visited, postvisit: -> (w) { topo << w })
+      explore(v, visited: visited, postvisit: -> (w) { topo.unshift(w) })
     end
-    topo.reverse
+    topo
   end
 
   def distances_from(s)
