@@ -35,7 +35,8 @@ class Graph
   end
 
   def walk(order: :breadth_first, start: self.vertices,
-           previsit: nil, visit: nil, postvisit: nil)
+           previsit: nil, visit: nil, postvisit: nil,
+           cycle: nil)
     visited = Set.new()
     pending = Pending.new(order == :breadth_first ? :queue : :stack)
     postorder = Pending.new(:stack)
@@ -47,7 +48,10 @@ class Graph
       while (u = pending.take) do
         visit.call(u) if visit
         self.adjacencies[u].each do |v|
-          next unless visited.add?(v)
+          unless visited.add?(v)
+            cycle.call(v) if cycle
+            next
+          end
           previsit.call(v, false) if previsit
           pending.put(v)
           postorder.put(v) if postvisit
@@ -57,6 +61,15 @@ class Graph
         postvisit.call(v)
       end
     end
+  end
+
+  def acyclic?
+    walk(cycle: proc { return false })
+    return true
+  end
+
+  def dag?
+    directed? && acyclic?
   end
 
   def toposort
@@ -99,7 +112,7 @@ class Graph
 
   def reachable?(s, t)
     walk(order: :depth_first, start: s,
-      previsit: Proc.new { |v| return true if v == t })
+      previsit: proc { |v| return true if v == t })
     return false
   end
 

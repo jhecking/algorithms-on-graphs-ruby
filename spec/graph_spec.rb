@@ -35,6 +35,35 @@ EOT
     end
   end
 
+  describe '#acyclic?' do
+    it 'returns true if the graph does not have any cycles' do
+      data = StringIO.new <<EOT
+5 7
+1 2
+2 3
+1 3
+3 4
+1 4
+2 5
+3 5
+EOT
+      subject = described_class.load(data, true)
+      expect(subject.acyclic?).to be(false)
+    end
+
+    it 'returns false if the graph has at least one cycle' do
+      data = StringIO.new <<EOT
+4 4
+1 2
+4 1
+2 3
+3 1
+EOT
+      subject = described_class.load(data, true)
+      expect(subject.acyclic?).to be(false)
+    end
+  end
+
   describe '#toposort' do
     it 'returns the vertices in topological order' do
       data = StringIO.new <<EOT
@@ -43,7 +72,7 @@ EOT
 4 1
 3 1
 EOT
-      subject = Graph.load(data, true)
+      subject = described_class.load(data, true)
       expect(subject.toposort).to eql([4, 3, 1, 2])
     end
   end
