@@ -106,7 +106,7 @@ class Graph
 
   def distances_from(s)
     dist = {}
-    self.vertices.each do |v|
+    vertices.each do |v|
       dist[v] = -1
     end
     current = dist[s] = 0
