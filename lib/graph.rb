@@ -21,17 +21,15 @@ class Graph
   end
 
   def adjacencies
-    @adj ||= begin
-      adj = {}
-      self.vertices.each do |v|
-        adj[v] = Set.new
-      end
-      self.edges.each do |e|
-        adj[e.a] << e.b
-        adj[e.b] << e.a unless self.directed?
-      end
-      adj
+    adj = {}
+    vertices.each do |v|
+      adj[v] = Set.new
     end
+    edges.each do |e|
+      adj[e.a] << e.b
+      adj[e.b] << e.a unless directed?
+    end
+    adj
   end
 
   # Walks all vertices reachable from a given seed vertex or set of seed
