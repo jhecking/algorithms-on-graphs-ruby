@@ -36,8 +36,9 @@ EOT
   end
 
   describe '#acyclic?' do
-    it 'returns true if the graph does not have any cycles' do
-      data = StringIO.new <<EOT
+    context 'directed graphs' do
+      it 'returns true if the graph does not have any cycles' do
+        data = StringIO.new <<EOT
 5 7
 1 2
 2 3
@@ -47,20 +48,56 @@ EOT
 2 5
 3 5
 EOT
-      subject = described_class.load(data, true)
-      expect(subject.acyclic?).to be(false)
-    end
+        subject = described_class.load(data, true)
+        expect(subject.acyclic?).to be(true)
+      end
 
-    it 'returns false if the graph has at least one cycle' do
-      data = StringIO.new <<EOT
+      it 'returns false if the graph has at least one cycle' do
+        data = StringIO.new <<EOT
 4 4
 1 2
 4 1
 2 3
 3 1
 EOT
-      subject = described_class.load(data, true)
-      expect(subject.acyclic?).to be(false)
+        subject = described_class.load(data, true)
+        expect(subject.acyclic?).to be(false)
+      end
+
+      it 'ignores "false" circles in directed graphs' do
+        data = StringIO.new <<EOT
+3 3
+1 2
+1 3
+2 3
+EOT
+        subject = described_class.load(data, true)
+        expect(subject.acyclic?).to be(true)
+      end
+    end
+
+    context 'undirected graphs' do
+      it 'returns true if the graph does not have any cycles' do
+        subject = described_class.load StringIO.new <<EOT
+5 4
+1 2
+1 3
+1 4
+3 5
+EOT
+        expect(subject.acyclic?).to be(true)
+      end
+
+      it 'returns false if the graph has at least one cycle' do
+        subject = described_class.load StringIO.new <<EOT
+4 4
+1 2
+4 1
+2 3
+3 1
+EOT
+        expect(subject.acyclic?).to be(false)
+      end
     end
   end
 

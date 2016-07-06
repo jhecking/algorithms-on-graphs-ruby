@@ -34,9 +34,22 @@ class Graph
     end
   end
 
+  # Walks all vertices reachable from a given seed vertex or set of seed
+  # vertices in either depth-first or breadth-first order. The method takes a
+  # number of procs that trigger during certain phases of the walk:
+  #
+  # - previsit:  Called whenever a new vertex is first discovered as the
+  #              adjacent vertex of the currently visited vertex. The proc will
+  #              be called with the vertex v as the first parameter. previsit
+  #              is also called before a seed vertex is visited; in the latter
+  #              case the proc will receive a second paramter with the value
+  #              true to indicate that the vertex v is a seed vertex.
+  # - visit:     Called whenever a vertex is being visited; the proc will be
+  #              called with the vertex v as the first and only paramter.
+  # - postvisit: Called for vertex v once v as well as all vertices that were
+  #              discovered as part of the exploration of v have been visited.
   def walk(order: :breadth_first, start: self.vertices,
-           previsit: nil, visit: nil, postvisit: nil,
-           cycle: nil)
+           previsit: nil, visit: nil, postvisit: nil)
     visited = Set.new()
     pending = Pending.new(order == :breadth_first ? :queue : :stack)
     postorder = Pending.new(:stack)
@@ -48,10 +61,7 @@ class Graph
       while (u = pending.take) do
         visit.call(u) if visit
         self.adjacencies[u].each do |v|
-          unless visited.add?(v)
-            cycle.call(v) if cycle
-            next
-          end
+          next unless visited.add?(v)
           previsit.call(v, false) if previsit
           pending.put(v)
           postorder.put(v) if postvisit
@@ -64,8 +74,11 @@ class Graph
   end
 
   def acyclic?
-    walk(cycle: proc { return false })
-    return true
+    count = 0
+    postorder = {}
+    walk(order: :depth_first,
+      postvisit: -> (v) { postorder[v] = count; count += 1 })
+    edges.none? { |e| postorder[e.a] < postorder[e.b] }
   end
 
   def dag?
