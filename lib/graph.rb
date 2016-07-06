@@ -32,41 +32,39 @@ class Graph
     adj
   end
 
-  # Walks all vertices reachable from a given seed vertex or set of seed
-  # vertices in either depth-first or breadth-first order. The method takes a
-  # number of procs that trigger during certain phases of the walk:
-  #
-  # - previsit:  Called whenever a new vertex is first discovered as the
-  #              adjacent vertex of the currently visited vertex. The proc will
-  #              be called with the vertex v as the first parameter. previsit
-  #              is also called before a seed vertex is visited; in the latter
-  #              case the proc will receive a second paramter with the value
-  #              true to indicate that the vertex v is a seed vertex.
-  # - visit:     Called whenever a vertex is being visited; the proc will be
-  #              called with the vertex v as the first and only paramter.
-  # - postvisit: Called for vertex v once v as well as all vertices that were
-  #              discovered as part of the exploration of v have been visited.
-  def walk(order: :breadth_first, start: self.vertices,
-           previsit: nil, visit: nil, postvisit: nil)
+  def bfs(start: self.vertices, previsit: nil, visit: nil)
     visited = Set.new()
-    pending = Pending.new(order == :breadth_first ? :queue : :stack)
-    postorder = Pending.new(:stack)
+    queue = []
     Array(start).each do |s|
       next unless visited.add?(s)
-      previsit.call(s, true) if previsit
-      pending.put(s)
-      postorder.put(s) if postvisit
-      while (u = pending.take) do
+      queue.push(s)
+      while (u = queue.shift) do
         visit.call(u) if visit
-        self.adjacencies[u].each do |v|
+        adjacencies[u].each do |v|
           next unless visited.add?(v)
-          previsit.call(v, false) if previsit
-          pending.put(v)
-          postorder.put(v) if postvisit
+          previsit.call(v) if previsit
+          queue.push(v)
         end
       end
-      while (v = postorder.take) do
-        postvisit.call(v)
+    end
+  end
+
+  def dfs(start: self.vertices, previsit: nil, postvisit: nil)
+    visited = Set.new()
+    stack = []
+    postorder = []
+    Array(start).each do |s|
+      next if visited.member?(s)
+      stack.push(s)
+      while (u = stack.pop) do
+        if u == postorder.last
+          postvisit.call(u)
+          postorder.pop
+        end
+        next unless visited.add?(u)
+        previsit.call(u) if previsit
+        postorder.push(u) and stack.push(u) if postvisit
+        stack += adjacencies[u].to_a
       end
     end
   end
@@ -74,8 +72,7 @@ class Graph
   def acyclic?
     count = 0
     postorder = {}
-    walk(order: :depth_first,
-      postvisit: -> (v) { postorder[v] = count; count += 1 })
+    dfs(postvisit: -> (v) { postorder[v] = (count += 1) })
     edges.none? { |e| postorder[e.a] < postorder[e.b] }
   end
 
@@ -85,17 +82,16 @@ class Graph
 
   def toposort
     topo = []
-    walk(order: :depth_first,
-         postvisit: -> (v) { topo.unshift(v) })
+    dfs(postvisit: -> (v) { topo.unshift(v) })
     topo
   end
 
   def shortest_path(s, t)
-    curr = s
     prev = {}
-    walk(order: :breadth_first, start: s,
-        visit: -> (v) { curr = v },
-        previsit: -> (v, seed) { prev[v] = curr unless seed })
+    current = s
+    bfs(start: s,
+      previsit: -> (v) { prev[v] = current },
+      visit: -> (v) { current = v })
 
     # return early if t is not reachable from s
     return nil unless prev[t]
@@ -111,27 +107,26 @@ class Graph
   def distances_from(s)
     dist = {}
     self.vertices.each do |v|
-      dist[v] ||= -1
+      dist[v] = -1
     end
-    dist[s] = 0
-    current_dist = 0
-    walk(order: :breadth_first, start: s,
-      visit: -> (v) { current_dist = dist[v] },
-      previsit: -> (v, seed) { dist[v] = current_dist + 1 unless seed })
+    current = dist[s] = 0
+    bfs(start: s,
+      previsit: -> (v) { dist[v] = current + 1 },
+      visit: -> (v) { current = dist[v] })
     dist
   end
 
   def reachable?(s, t)
-    walk(order: :depth_first, start: s,
-      previsit: proc { |v| return true if v == t })
+    dfs(start: s, previsit: proc { |v| return true if v == t })
     return false
   end
 
   def connected_components
     components = Set.new
-    curr = nil
-    walk(order: :depth_first,
-      previsit: -> (v, seed) { components << (curr = Set.new) if seed; curr << v })
+    component = nil
+    depth = 0
+    dfs(previsit: -> (v) { components << (component = Set.new) if (depth += 1) == 1; component << v },
+      postvisit: -> (_) { depth -= 1 })
     components
   end
 
