@@ -49,21 +49,19 @@ class Graph
     end
   end
 
+  ExitNode = Struct.new(:vertex)
+
   def dfs(start: self.vertices, previsit: nil, postvisit: nil)
     visited = Set.new()
     stack = []
-    postorder = []
     Array(start).each do |s|
       next if visited.member?(s)
       stack.push(s)
       while (u = stack.pop) do
-        if u == postorder.last
-          postvisit.call(u)
-          postorder.pop
-        end
+        postvisit.call(u.vertex) and next if u.is_a? ExitNode
         next unless visited.add?(u)
         previsit.call(u) if previsit
-        postorder.push(u) and stack.push(u) if postvisit
+        stack.push(ExitNode.new(u)) if postvisit
         stack += adjacencies[u].to_a
       end
     end
