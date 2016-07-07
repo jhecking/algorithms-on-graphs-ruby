@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby -w
+
+require 'set'
+
+(v, e) = ARGV.map(&:to_i)
+puts [v, e].join(' ')
+
+edges = Set.new
+count = 0
+begin
+  a = rand(1..(v-1))
+  b = rand((a+1)..v)
+  edges.add?([a, b]) or next
+  puts [a, b].join(' ')
+  count += 1
+end while count < e
