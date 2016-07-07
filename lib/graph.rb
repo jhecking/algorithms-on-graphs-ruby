@@ -1,4 +1,5 @@
 require 'set'
+require 'stringio'
 
 Edge = Struct.new(:a, :b, :weight)
 
@@ -128,6 +129,19 @@ class Graph
     dfs(previsit: -> (v) { components << (component = Set.new) if (depth += 1) == 1; component << v },
       postvisit: -> (_) { depth -= 1 })
     components
+  end
+
+  def to_dot
+    dot = StringIO.new
+    dot.puts("#{directed? ? 'digraph' : 'graph'} name {")
+    vertices.each do |v|
+      dot.puts("  #{v};")
+    end
+    edges.each do |e|
+      dot.puts("  #{e.a} -- #{e.b};")
+    end
+    dot.puts("}")
+    dot.string
   end
 
   # simple list data structure that can switch between
