@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby -w
+
 require 'set'
 require 'stringio'
 
@@ -185,4 +187,27 @@ class Graph
     end
   end
 
+end
+
+
+case (command = File.basename($0, '.*'))
+when 'acyclicity'
+  puts Graph.load(STDIN, true).acyclic? ? "0" : "1"
+when 'bfs'
+  graph = Graph.load(STDIN)
+  (s, t) = STDIN.readline.split.map(&:to_i)
+  path = graph.shortest_path(s, t)
+  puts path ? path.length : -1
+when 'connected_components'
+  puts Graph.load(STDIN, false).connected_components.length
+when 'reachability'
+  graph = Graph.load(STDIN)
+  (s, t) = STDIN.readline.split.map(&:to_i)
+  puts graph.reachable?(s, t) ? 1 : 0
+when 'strongly_connected'
+  puts Graph.load(STDIN, true).strongly_connected_components.length
+when 'toposort'
+  puts Graph.load(STDIN, true).toposort.join(' ')
+else
+  warn "Unknown command: #{command}"
 end

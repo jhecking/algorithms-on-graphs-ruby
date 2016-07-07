@@ -1,6 +1,0 @@
-#!/usr/bin/env ruby -w
-require './lib/graph'
-
-data = STDIN
-graph = Graph.load(data)
-puts graph.connected_components.length
