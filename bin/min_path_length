@@ -1,9 +1,8 @@
 #!/usr/bin/env ruby -w
 require './lib/graph'
 
-File.open(ARGV.first) do |data|
-  graph = Graph.load(data)
-  (from, to) = data.readline.split.map(&:to_i)
-  path = graph.shortest_path(from, to)
-  puts (path && path.length) || -1
-end
+data = STDIN
+graph = Graph.load(data)
+(from, to) = data.readline.split.map(&:to_i)
+path = graph.shortest_path(from, to)
+puts (path && path.length) || -1
