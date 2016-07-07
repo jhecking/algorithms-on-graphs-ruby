@@ -6,13 +6,13 @@
 #
 # Output is in the format used by the assignments.
 #
-# Usage: ./generate v e
+# Usage: ./gen_dag v e
 # Parameter:
 # - v: number of vertices
 # - e: number of edges
 #
 # Example:
-# $ ./bin/generator 5 4
+# $ ./bin/gen_dag 5 4
 # 5 4
 # 4 5
 # 2 4
