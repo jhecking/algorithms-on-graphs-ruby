@@ -1,6 +1,12 @@
 #!/usr/bin/env ruby -w
+# Convert graph read from STDIN to dot file format and output to STDOUT.
+#
+# Example: Generate a random graph with 10 vertices and 10 edges and render it into a PNG file
+#
+# $ ./bin/generator 10 10 | ./bin/dot  | dot -Tpng -odot.png && open dot.png
+#
 require './lib/graph'
 
 data = STDIN
-graph = Graph.load(data)
+graph = Graph.load(data, true)
 puts graph.to_dot

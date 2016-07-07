@@ -138,7 +138,7 @@ class Graph
       dot.puts("  #{v};")
     end
     edges.each do |e|
-      dot.puts("  #{e.a} -- #{e.b};")
+      dot.puts("  #{e.a} #{directed? ? '->' : '--'} #{e.b};")
     end
     dot.puts("}")
     dot.string
