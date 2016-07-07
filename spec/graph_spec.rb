@@ -35,6 +35,21 @@ EOT
     end
   end
 
+  describe '#strongly_connected_components' do
+    it 'returns a single strongly connected compoent' do
+      data = StringIO.new <<EOT
+4 4
+1 2
+4 1
+2 3
+3 1
+EOT
+      subject = described_class.load(data, true)
+      components = subject.connected_components(true)
+      expect(components).to eql(Set.new([Set.new([1, 3, 2]), Set.new([4])]))
+    end
+  end
+
   describe '#acyclic?' do
     context 'directed graphs' do
       it 'returns true if the graph does not have any cycles' do

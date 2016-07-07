@@ -35,6 +35,11 @@ class Graph
     end
   end
 
+  def reverse
+    rev_edges = self.edges.map {|e| Edge.new(e.b, e.a, e.weight) }
+    Graph.new(vertices.clone, rev_edges, directed)
+  end
+
   def bfs(start: self.vertices, previsit: nil, visit: nil)
     visited = Set.new()
     queue = []
@@ -68,6 +73,12 @@ class Graph
         stack += adjacencies[u].to_a
       end
     end
+  end
+
+  def dfs_post_order
+    postorder = []
+    dfs(postvisit: -> (v) { postorder << v })
+    postorder
   end
 
   def acyclic?
@@ -122,13 +133,19 @@ class Graph
     return false
   end
 
-  def connected_components
-    components = Set.new
+  def connected_components(strong = false)
+    seed_order = strong ? reverse.dfs_post_order.reverse : vertices
+    components = []
     component = nil
     depth = 0
-    dfs(previsit: -> (v) { components << (component = Set.new) if (depth += 1) == 1; component << v },
+    dfs(start: seed_order,
+      previsit: -> (v) { components << (component = Set.new) if depth == 0; depth += 1; component << v },
       postvisit: -> (_) { depth -= 1 })
     components
+  end
+
+  def strongly_connected_components
+    connected_components(true)
   end
 
   def to_dot
