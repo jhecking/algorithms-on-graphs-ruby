@@ -21,15 +21,17 @@ class Graph
   end
 
   def adjacencies
-    adj = {}
-    vertices.each do |v|
-      adj[v] = Set.new
+    @adj ||= begin
+      adj = {}
+      self.vertices.each do |v|
+        adj[v] = Set.new
+      end
+      self.edges.each do |e|
+        adj[e.a] << e.b
+        adj[e.b] << e.a unless self.directed?
+      end
+      adj
     end
-    edges.each do |e|
-      adj[e.a] << e.b
-      adj[e.b] << e.a unless directed?
-    end
-    adj
   end
 
   def bfs(start: self.vertices, previsit: nil, visit: nil)
