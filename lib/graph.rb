@@ -150,6 +150,13 @@ class Graph
     connected_components(true)
   end
 
+  def bipartite?
+    groups = Hash.new(0)
+    current = 0
+    bfs(visit: -> (v) { current = groups[v] }, previsit: -> (v) { groups[v] = current.next % 2 })
+    edges.all? { |e| groups[e.a] != groups[e.b] }
+  end
+
   def to_dot
     dot = StringIO.new
     dot.puts("#{directed? ? 'digraph' : 'graph'} name {")

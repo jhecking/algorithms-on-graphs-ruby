@@ -186,6 +186,30 @@ EOT
 EOT
       expect(subject.distances_from(3)).to eql({1 => 1, 2 => -1, 3 => 0, 4 => 1, 5 => -1})
     end
-
   end
+
+  describe '#bipartite?' do
+    it 'returns true if all edges span vertices from two different groups' do
+      subject = described_class.load StringIO.new <<EOT
+5 4
+5 2
+4 2
+3 4
+1 4
+EOT
+      expect(subject.bipartite?).to eq(true)
+    end
+
+    it 'returns false if some edges span vertices of the same group group' do
+      subject = described_class.load StringIO.new <<EOT
+4 4
+1 2
+4 1
+2 3
+3 1
+EOT
+      expect(subject.bipartite?).to eq(false)
+    end
+  end
+
 end
