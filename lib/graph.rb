@@ -205,6 +205,8 @@ when 'bfs'
   (s, t) = STDIN.readline.split.map(&:to_i)
   path = graph.shortest_path(s, t)
   puts path ? path.length : -1
+when 'bipartite'
+  puts Graph.load(STDIN).bipartite? ? "1" : "0"
 when 'connected_components'
   puts Graph.load(STDIN, false).connected_components.length
 when 'reachability'
