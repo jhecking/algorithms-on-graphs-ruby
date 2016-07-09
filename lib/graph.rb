@@ -170,30 +170,6 @@ class Graph
     dot.string
   end
 
-  # simple list data structure that can switch between
-  # queue and stack insert order, i.e. first-in/first-out
-  # vs. last-in/first-out
-  class Pending
-    def initialize(mode)
-      @list = []
-      @mode = mode
-      # insert position for new elements
-      @pos = (mode == :queue) ? -1 : 0
-    end
-
-    def take
-      @list.shift
-    end
-
-    def put(e)
-      @list.insert(@pos, e)
-    end
-
-    def to_s
-      "<#{@mode}: #{@list}>"
-    end
-  end
-
 end
 
 
