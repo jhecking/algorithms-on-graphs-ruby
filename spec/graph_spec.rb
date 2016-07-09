@@ -31,7 +31,7 @@ EOT
 1 2
 3 2
 EOT
-      expect(subject.connected_components).to eql([[1, 2, 3].to_set, [4].to_set].to_set)
+      expect(subject.connected_components).to eql([Set.new([1, 2, 3]), Set.new([4])])
     end
   end
 
@@ -46,7 +46,7 @@ EOT
 EOT
       subject = described_class.load(data, true)
       components = subject.connected_components(true)
-      expect(components).to eql(Set.new([Set.new([1, 3, 2]), Set.new([4])]))
+      expect(components).to eql([Set.new([1, 3, 2]), Set.new([4])])
     end
   end
 
