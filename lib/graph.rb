@@ -2,13 +2,16 @@
 
 require 'set'
 require 'stringio'
+require 'bigdecimal'
 
-Edge = Struct.new(:a, :b, :weight)
 
 class Graph
   attr_reader :vertices, :edges
   attr_reader :directed
   alias_method :directed?, :directed
+
+  Infinity = BigDecimal::INFINITY
+  Edge = Struct.new(:a, :b, :weight)
 
   def self.load(stream, directed = false)
     (v, e) = stream.readline.split.map(&:to_i)
@@ -26,14 +29,28 @@ class Graph
   def adjacencies
     @adj ||= begin
       adj = {}
-      self.vertices.each do |v|
+      vertices.each do |v|
         adj[v] = Set.new
       end
-      self.edges.each do |e|
+      edges.each do |e|
         adj[e.a] << e.b
-        adj[e.b] << e.a unless self.directed?
+        adj[e.b] << e.a unless directed?
       end
       adj
+    end
+  end
+
+  def edges_from
+    @edges_by_vertex ||= begin
+      edges_by_vertex = {}
+      vertices.each do |v|
+        edges_by_vertex[v] = Set.new
+      end
+      edges.each do |e|
+        edges_by_vertex[e.a] << e
+        edges_by_vertex[e.b] << e unless directed?
+      end
+      edges_by_vertex
     end
   end
 
@@ -157,6 +174,24 @@ class Graph
     edges.all? { |e| groups[e.a] != groups[e.b] }
   end
 
+  def djikstra(s)
+    dist = vertices.inject({}) { |h, v| h[v] = Infinity; h }
+    prev = {}
+    dist[s] = 0
+    queue = MinQueue.new(vertices.map {|v| [v, dist[v]]})
+    while (u = queue.pop) do
+      edges_from[u].each do |e|
+        v = e.b
+        if dist[v] > dist[u] + e.weight
+          dist[v] = dist[u] + e.weight
+          queue.update(v, dist[v])
+          prev[v] = u
+        end
+      end
+    end
+    [dist, prev]
+  end
+
   def to_dot
     dot = StringIO.new
     dot.puts("#{directed? ? 'digraph' : 'graph'} name {")
@@ -168,6 +203,28 @@ class Graph
     end
     dot.puts("}")
     dot.string
+  end
+
+  class MinQueue
+    def initialize(enumerable)
+      @queue = enumerable.map { |key, value| [key, value] }
+      sort!
+    end
+
+    def pop
+      entry = @queue.pop
+      entry && entry.first
+    end
+
+    def update(key, value)
+      entry = @queue.find {|o| o.first == key}
+      entry[1] = value
+      sort!
+    end
+
+    def sort!
+      @queue.sort! { |a, b| (b.last <=> a.last) }
+    end
   end
 
 end
@@ -185,6 +242,11 @@ when 'bipartite'
   puts Graph.load(STDIN).bipartite? ? "1" : "0"
 when 'connected_components'
   puts Graph.load(STDIN, false).connected_components.length
+when 'djikstra'
+  graph = Graph.load(STDIN)
+  (s, t) = STDIN.readline.split.map(&:to_i)
+  (dist, _) = graph.djikstra(s)
+  puts (d = dist[t]) == Graph::Infinity ? "-1" : d
 when 'reachability'
   graph = Graph.load(STDIN)
   (s, t) = STDIN.readline.split.map(&:to_i)

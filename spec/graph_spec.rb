@@ -212,4 +212,20 @@ EOT
     end
   end
 
+  describe '#djikstra' do
+    it 'finds the shortest path from vertex s to each other node in a weighted, directed graph' do
+      data = StringIO.new <<EOT
+4 4
+1 2 1
+4 1 2
+2 3 2
+1 3 5
+EOT
+      subject = described_class.load(data, true)
+      (dist, prev) = subject.djikstra(1)
+      expect(dist).to eq({ 1 => 0, 2 => 1, 3 => 3, 4 => Graph::Infinity })
+      expect(prev).to eq({ 2 => 1, 3 => 2 })
+    end
+  end
+
 end
