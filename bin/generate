@@ -21,15 +21,29 @@
 #
 require 'set'
 
-(v, e) = ARGV.map(&:to_i)
-puts [v, e].join(' ')
+(v, e) = ARGV.shift(2).map(&:to_i)
+
+weight = false
+cyclic = false
+while (arg = ARGV.shift) do
+  case arg
+  when '-c', '--cyclic'
+    cyclic = true
+  when '-w', '--weight'
+    weight = ARGV.shift.to_i
+  end
+end
 
 edges = Set.new
 count = 0
+puts [v, e].join(' ')
 begin
   a = rand(1..(v-1))
   b = rand((a+1)..v)
+  a, b = b, a if cyclic && rand < 0.5
+  edge = [a, b]
   edges.add?([a, b]) or next
-  puts [a, b].join(' ')
+  edge << rand(1..weight) if weight
+  puts edge * ' '
   count += 1
 end while count < e

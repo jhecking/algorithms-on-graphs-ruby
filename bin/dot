@@ -5,8 +5,28 @@
 #
 # $ ./bin/generator 10 10 | ./bin/dot  | dot -Tpng -odot.png && open dot.png
 #
-require './lib/graph'
 
+directed = false
+preview = false
+while (arg = ARGV.shift) do
+  case arg
+  when '-d', '--directed'
+    directed = true
+  when '-p', '--preview'
+    preview = true
+  end
+end
+
+require './lib/graph'
 data = STDIN
-graph = Graph.load(data, true)
-puts graph.to_dot
+graph = Graph.load(data, directed)
+if preview
+  IO.popen '/usr/local/bin/dot -Tpng | open -a Preview.app -f', 'w' do |io|
+    graph.to_dot.each_line do |line|
+      io.write line
+    end
+  end
+  raise 'preview failed' unless $?.success?
+else
+  puts graph.to_dot
+end

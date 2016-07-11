@@ -195,12 +195,16 @@ class Graph
 
   def to_dot
     dot = StringIO.new
-    dot.puts("#{directed? ? 'digraph' : 'graph'} name {")
+    type = directed? ? "digraph" : "graph"
+    dot.puts("#{type} {")
     vertices.each do |v|
       dot.puts("  #{v};")
     end
+    sep = directed? ? '->' : '--'
     edges.each do |e|
-      dot.puts("  #{e.a} #{directed? ? '->' : '--'} #{e.b};")
+      dot.write("  #{[e.a, e.b] * sep}")
+      dot.write(" [label=\"#{e.weight}\"]") if e.weight
+      dot.puts(?;)
     end
     dot.puts("}")
     dot.string
@@ -292,7 +296,7 @@ if profile
   RubyProf.start
 end
 
-case (command = File.basename($0, '.*'))
+case File.basename($0, '.*')
 when 'acyclicity'
   puts Graph.load(STDIN, true).acyclic? ? "0" : "1"
 when 'bfs'
@@ -317,8 +321,6 @@ when 'strongly_connected'
   puts Graph.load(STDIN, true).strongly_connected_components.length
 when 'toposort'
   puts Graph.load(STDIN, true).toposort.join(' ')
-else
-  warn "Unknown command: #{command}"
 end
 
 if profile
