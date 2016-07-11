@@ -280,10 +280,17 @@ class Graph
 
 end
 
-# require 'ruby-prof'
-# RubyProf.start
-# profile = RubyProf.stop
-# RubyProf::FlatPrinter.new(profile).print(STDOUT)
+profile = false
+ARGV.each do |arg|
+  case arg
+  when '-p', '--prof' then profile = true
+  end
+end
+
+if profile
+  require 'ruby-prof'
+  RubyProf.start
+end
 
 case (command = File.basename($0, '.*'))
 when 'acyclicity'
@@ -312,4 +319,9 @@ when 'toposort'
   puts Graph.load(STDIN, true).toposort.join(' ')
 else
   warn "Unknown command: #{command}"
+end
+
+if profile
+  profile = RubyProf.stop
+  RubyProf::FlatPrinter.new(profile).print(STDOUT)
 end
