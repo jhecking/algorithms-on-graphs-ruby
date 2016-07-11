@@ -174,16 +174,18 @@ class Graph
   end
 
   def djikstra(s)
+    known = Set.new
     dist = vertices.inject({}) { |h, v| h[v] = Infinity; h }
     prev = {}
     dist[s] = 0
     queue = MinHeap.new(vertices.map {|v| [v, dist[v]]})
     while (u = queue.pop) do
+      next unless known.add?(u)
       edges_from[u].each do |e|
         v = e.b
         if dist[v] > dist[u] + e.weight
           dist[v] = dist[u] + e.weight
-          queue.update(v, dist[v])
+          queue.insert(v, dist[v])
           prev[v] = u
         end
       end
@@ -219,7 +221,7 @@ class Graph
 
     def insert(key, value)
       @data << [key, value]
-      upheap(@data.length - 1)
+      sift_up(@data.length - 1)
     end
 
     def pop
@@ -229,12 +231,6 @@ class Graph
       retval, @data[0] = @data[0], @data.pop
       sift_down(0)
       return retval.first
-    end
-
-    def update(key, value)
-      idx = @data.find_index {|e| e.first == key}
-      @data[idx][1] = value
-      sift_up(idx)
     end
 
     private
