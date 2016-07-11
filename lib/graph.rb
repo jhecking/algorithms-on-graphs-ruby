@@ -276,11 +276,14 @@ class Graph
     def swap(pos1, pos2)
       @data[pos1], @data[pos2] = @data[pos2], @data[pos1]
     end
-
   end
 
 end
 
+# require 'ruby-prof'
+# RubyProf.start
+# profile = RubyProf.stop
+# RubyProf::FlatPrinter.new(profile).print(STDOUT)
 
 case (command = File.basename($0, '.*'))
 when 'acyclicity'
@@ -295,14 +298,10 @@ when 'bipartite'
 when 'connected_components'
   puts Graph.load(STDIN, false).connected_components.length
 when 'djikstra'
-  require 'ruby-prof'
   graph = Graph.load(STDIN)
   (s, t) = STDIN.readline.split.map(&:to_i)
-  RubyProf.start
   (dist, _) = graph.djikstra(s)
-  profile = RubyProf.stop
   puts (d = dist[t]) == Graph::Infinity ? "-1" : d
-  RubyProf::FlatPrinter.new(profile).print(STDOUT)
 when 'reachability'
   graph = Graph.load(STDIN)
   (s, t) = STDIN.readline.split.map(&:to_i)
