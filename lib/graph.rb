@@ -2,7 +2,6 @@
 
 require 'set'
 require 'stringio'
-require 'bigdecimal'
 
 
 class Graph
@@ -10,7 +9,7 @@ class Graph
   attr_reader :directed
   alias_method :directed?, :directed
 
-  Infinity = BigDecimal::INFINITY
+  Infinity = Float::INFINITY
   Edge = Struct.new(:a, :b, :weight)
 
   def self.load(stream, directed = false)
@@ -178,7 +177,7 @@ class Graph
     dist = vertices.inject({}) { |h, v| h[v] = Infinity; h }
     prev = {}
     dist[s] = 0
-    queue = MinQueue.new(vertices.map {|v| [v, dist[v]]})
+    queue = MinHeap.new(vertices.map {|v| [v, dist[v]]})
     while (u = queue.pop) do
       edges_from[u].each do |e|
         v = e.b
@@ -205,26 +204,83 @@ class Graph
     dot.string
   end
 
-  class MinQueue
+  class MinHeap
     def initialize(enumerable)
-      @queue = enumerable.map { |key, value| [key, value] }
-      sort!
+      heapify(enumerable)
+    end
+
+    def empty?
+      @data.empty?
+    end
+
+    def size
+      @data.size
+    end
+
+    def insert(key, value)
+      @data << [key, value]
+      upheap(@data.length - 1)
     end
 
     def pop
-      entry = @queue.pop
-      entry && entry.first
+      return nil if empty?
+      return @data.pop.first if size == 1
+
+      retval, @data[0] = @data[0], @data.pop
+      sift_down(0)
+      return retval.first
     end
 
     def update(key, value)
-      entry = @queue.find {|o| o.first == key}
-      entry[1] = value
-      sort!
+      idx = @data.find_index {|e| e.first == key}
+      @data[idx][1] = value
+      sift_up(idx)
     end
 
-    def sort!
-      @queue.sort! { |a, b| (b.last <=> a.last) }
+    private
+
+    def heapify(enum)
+      @data = enum.to_a
+      (size / 2).downto(1).each do |idx|
+        sift_down(idx)
+      end
     end
+
+    def sift_up(pos)
+      while pos > 0
+        parent = ((pos + 1) / 2) - 1
+        if compare(parent, pos)
+          swap(parent, pos)
+          pos = parent
+        else
+          return
+        end
+      end
+    end
+
+    def sift_down(pos)
+      loop do
+        left = ((pos + 1) * 2) - 1
+        right = left + 1
+        next_child = left
+        break if left >= size
+        if right < size
+          next_child = right unless compare(right, left)
+        end
+        break if compare(next_child, pos)
+        swap(next_child, pos)
+        pos = next_child
+      end
+    end
+
+    def compare(pos1, pos2)
+      @data[pos2].last < @data[pos1].last
+    end
+
+    def swap(pos1, pos2)
+      @data[pos1], @data[pos2] = @data[pos2], @data[pos1]
+    end
+
   end
 
 end
@@ -243,10 +299,14 @@ when 'bipartite'
 when 'connected_components'
   puts Graph.load(STDIN, false).connected_components.length
 when 'djikstra'
+  require 'ruby-prof'
   graph = Graph.load(STDIN)
   (s, t) = STDIN.readline.split.map(&:to_i)
+  RubyProf.start
   (dist, _) = graph.djikstra(s)
+  profile = RubyProf.stop
   puts (d = dist[t]) == Graph::Infinity ? "-1" : d
+  RubyProf::FlatPrinter.new(profile).print(STDOUT)
 when 'reachability'
   graph = Graph.load(STDIN)
   (s, t) = STDIN.readline.split.map(&:to_i)
