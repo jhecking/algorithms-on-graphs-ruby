@@ -195,6 +195,7 @@ class Graph
     dist = vertices.inject({}) { |h, v| h[v] = Infinity; h }
     prev = {}
     dist[s] = 0
+    relaxed = false
     (vertices.length - 1).times do
       relaxed = false
       edges.each do |edge|
@@ -202,17 +203,33 @@ class Graph
       end
       break unless relaxed
     end
-    [dist, prev]
+
+    if relaxed
+      relaxed = Set.new
+      edges.each do |edge|
+        if relax_edge(edge, dist, prev)
+          relaxed << edge
+        end
+      end
+      relaxed = false if relaxed.empty?
+    end
+
+    [dist, prev, relaxed]
+  end
+
+  def shortest_paths(s)
+    (dist, _, relaxed) = bellman_ford(s)
+    return dist unless relaxed
+    bfs(start: relaxed.map{|edge| edge.b},
+        visit: -> (v) {dist[v] = -Infinity})
+    return dist
   end
 
   def has_negative_cycle?
     explored = Set.new
     vertices.each do |s|
       next if explored.member?(s)
-      (dist, _) = bellman_ford(s)
-      relaxed = edges.any? do |edge|
-        relax_edge(edge, dist)
-      end
+      (dist, _, relaxed) = bellman_ford(s)
       return true if relaxed
       explored += dist.reject{|_, d| d == Infinity}.map{|v, _| v}
     end
@@ -361,6 +378,14 @@ when 'toposort'
   puts Graph.load(STDIN, true).toposort.join(' ')
 when 'negative_cycle'
   puts Graph.load(STDIN, true).has_negative_cycle? ? "1" : "0"
+when 'shortest_paths'
+  graph = Graph.load(STDIN, true)
+  s = STDIN.readline.to_i
+  dist = graph.shortest_paths(s)
+  puts dist.sort_by(&:first).map(&:last).map {|v|
+    v == Graph::Infinity ? ?* :
+      v == -Graph::Infinity ? ?- : v
+  }
 end
 
 if profile
