@@ -181,14 +181,26 @@ class Graph
     queue = MinHeap.new(vertices.map {|v| [v, dist[v]]})
     while (u = queue.pop) do
       next unless known.add?(u)
-      edges_from[u].each do |e|
-        v = e.b
-        if dist[v] > dist[u] + e.weight
-          dist[v] = dist[u] + e.weight
-          prev[v] = u
+      edges_from[u].each do |edge|
+        if relax_edge(edge, dist, prev)
+          v = edge.b
           queue.insert(v, dist[v])
         end
       end
+    end
+    [dist, prev]
+  end
+
+  def bellman_ford(s)
+    dist = vertices.inject({}) { |h, v| h[v] = Infinity; h }
+    prev = {}
+    dist[s] = 0
+    (vertices.length - 1).times do
+      relaxed = false
+      edges.each do |edge|
+        relaxed ||= relax_edge(edge, dist, prev)
+      end
+      break unless relaxed
     end
     [dist, prev]
   end
@@ -199,31 +211,12 @@ class Graph
       next if explored.member?(s)
       (dist, _) = bellman_ford(s)
       relaxed = edges.any? do |edge|
-        v, w = edge.a, edge.b
-        if dist[w] > dist[v] + edge.weight
-          dist[w] = dist[v] + edge.weight
-        end
+        relax_edge(edge, dist)
       end
       return true if relaxed
-      explored += dist.select{|_, d| d < Infinity}.map{|v, _| v}
+      explored += dist.reject{|_, d| d == Infinity}.map{|v, _| v}
     end
     return false
-  end
-
-  def bellman_ford(s)
-    dist = vertices.inject({}) { |h, v| h[v] = Infinity; h }
-    prev = {}
-    dist[s] = 0
-    (vertices.length - 1).times do
-      edges.each do |edge|
-        v, w = edge.a, edge.b
-        if dist[w] > dist[v] + edge.weight
-          dist[w] = dist[v] + edge.weight
-          prev[w] = v
-        end
-      end
-    end
-    [dist, prev]
   end
 
   def to_dot
@@ -241,6 +234,18 @@ class Graph
     end
     dot.puts("}")
     dot.string
+  end
+
+  private
+
+  def relax_edge(edge, dist, prev = nil)
+    v, w = edge.a, edge.b
+    if dist[w] > dist[v] + edge.weight
+      dist[w] = dist[v] + edge.weight
+      prev[w] = v if prev
+      return true
+    end
+    return false
   end
 
   class MinHeap
