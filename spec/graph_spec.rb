@@ -228,4 +228,42 @@ EOT
     end
   end
 
+  describe '#negative_cycle' do
+    it 'returns true if the graph has a negative weight cycle' do
+      data = StringIO.new <<EOT
+4 4
+1 2 -5
+4 1 2
+2 3 2
+3 1 1
+EOT
+      subject = described_class.load(data, true)
+      expect(subject.has_negative_cycle?).to be(true)
+    end
+
+    it 'returns false if the graph has a cycle but the weight is not negative' do
+      data = StringIO.new <<EOT
+4 4
+1 2 -5
+4 1 2
+2 3 4
+3 1 1
+EOT
+      subject = described_class.load(data, true)
+      expect(subject.has_negative_cycle?).to be(false)
+    end
+
+    it 'returns false if the graph has no cycles' do
+      data = StringIO.new <<EOT
+4 4
+1 2 -5
+4 1 2
+3 2 2
+3 1 1
+EOT
+      subject = described_class.load(data, true)
+      expect(subject.has_negative_cycle?).to be(false)
+    end
+  end
+
 end

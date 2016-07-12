@@ -185,8 +185,41 @@ class Graph
         v = e.b
         if dist[v] > dist[u] + e.weight
           dist[v] = dist[u] + e.weight
-          queue.insert(v, dist[v])
           prev[v] = u
+          queue.insert(v, dist[v])
+        end
+      end
+    end
+    [dist, prev]
+  end
+
+  def has_negative_cycle?
+    explored = Set.new
+    vertices.each do |s|
+      next if explored.member?(s)
+      (dist, _) = bellman_ford(s)
+      relaxed = edges.any? do |edge|
+        v, w = edge.a, edge.b
+        if dist[w] > dist[v] + edge.weight
+          dist[w] = dist[v] + edge.weight
+        end
+      end
+      return true if relaxed
+      explored += dist.select{|_, d| d < Infinity}.map{|v, _| v}
+    end
+    return false
+  end
+
+  def bellman_ford(s)
+    dist = vertices.inject({}) { |h, v| h[v] = Infinity; h }
+    prev = {}
+    dist[s] = 0
+    (vertices.length - 1).times do
+      edges.each do |edge|
+        v, w = edge.a, edge.b
+        if dist[w] > dist[v] + edge.weight
+          dist[w] = dist[v] + edge.weight
+          prev[w] = v
         end
       end
     end
@@ -321,6 +354,8 @@ when 'strongly_connected'
   puts Graph.load(STDIN, true).strongly_connected_components.length
 when 'toposort'
   puts Graph.load(STDIN, true).toposort.join(' ')
+when 'negative_cycle'
+  puts Graph.load(STDIN, true).has_negative_cycle? ? "1" : "0"
 end
 
 if profile
