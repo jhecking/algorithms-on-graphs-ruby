@@ -296,7 +296,7 @@ class Graph
 
     def heapify(enum)
       @data = enum.to_a
-      (size / 2).downto(1).each do |idx|
+      (size / 2).downto(0).each do |idx|
         sift_down(idx)
       end
     end
