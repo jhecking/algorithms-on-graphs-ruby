@@ -10,13 +10,33 @@ class Graph
   alias_method :directed?, :directed
 
   Infinity = Float::INFINITY
-  Edge = Struct.new(:a, :b, :weight)
+  Edge = Struct.new(:a, :b, :weight) do 
+    def inspect
+      "[#{a}, #{b}]"
+    end
+  end
 
   def self.load(stream, directed = false)
     (v, e) = stream.readline.split.map(&:to_i)
     vertices = Set.new(1..v)
     edges = stream.take(e).map {|l| Edge.new(*l.split.map(&:to_i))}
     self.new(vertices, edges, directed)
+  end
+
+  def self.load_connected_coords(stream)
+    points = stream.readline.to_i
+    vertices = Set.new(1..points)
+    coords = stream.take(points).map {|l| l.split.map(&:to_i)}
+    edges = Set.new()
+    coords.each_with_index do |a, i|
+      coords.each_with_index do |b, j|
+        break if a == b
+        dist = Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
+        edge = Edge.new(i+1, j+1, dist)
+        edges << edge
+      end
+    end
+    self.new(vertices, edges, false)
   end
 
   def initialize(vertices, edges, directed = false)
@@ -236,6 +256,19 @@ class Graph
     return false
   end
 
+  def kruskal
+    forrest = DisjointSets.new(vertices)
+    mst = Set.new
+    weighted_edges = MinHeap.new(edges.map{|e| [e, e.weight]})
+    while (edge = weighted_edges.pop) do
+      if (a = forrest.find(edge.a)) != (b = forrest.find(edge.b))
+        mst << edge
+        forrest.union(a, b)
+      end
+    end
+    return mst
+  end
+
   def to_dot
     dot = StringIO.new
     type = directed? ? "digraph" : "graph"
@@ -265,78 +298,94 @@ class Graph
     return false
   end
 
-  class MinHeap
-    def initialize(enumerable)
-      heapify(enumerable)
-    end
+end
 
-    def empty?
-      @data.empty?
-    end
+class DisjointSets
+  def initialize(enumerable)
+    @sets = enumerable.map{|x| Set.new([x])}.to_set
+  end
 
-    def size
-      @data.size
-    end
+  def find(member)
+    @sets.find{|s| s.member?(member)}
+  end
 
-    def insert(key, value)
-      @data << [key, value]
-      sift_up(@data.length - 1)
-    end
+  def union(set_a, set_b)
+    @sets << (set_a | set_b)
+    @sets.delete(set_a)
+    @sets.delete(set_b)
+  end
+end
 
-    def pop
-      return nil if empty?
-      return @data.pop.first if size == 1
+class MinHeap
+  def initialize(enumerable)
+    heapify(enumerable)
+  end
 
-      retval, @data[0] = @data[0], @data.pop
-      sift_down(0)
-      return retval.first
-    end
+  def empty?
+    @data.empty?
+  end
 
-    private
+  def size
+    @data.size
+  end
 
-    def heapify(enum)
-      @data = enum.to_a
-      (size / 2).downto(0).each do |idx|
-        sift_down(idx)
-      end
-    end
+  def insert(key, value)
+    @data << [key, value]
+    sift_up(@data.length - 1)
+  end
 
-    def sift_up(pos)
-      while pos > 0
-        parent = ((pos + 1) / 2) - 1
-        if compare(parent, pos)
-          swap(parent, pos)
-          pos = parent
-        else
-          return
-        end
-      end
-    end
+  def pop
+    return nil if empty?
+    return @data.pop.first if size == 1
 
-    def sift_down(pos)
-      loop do
-        left = ((pos + 1) * 2) - 1
-        right = left + 1
-        next_child = left
-        break if left >= size
-        if right < size
-          next_child = right unless compare(right, left)
-        end
-        break if compare(next_child, pos)
-        swap(next_child, pos)
-        pos = next_child
-      end
-    end
+    retval, @data[0] = @data[0], @data.pop
+    sift_down(0)
+    return retval.first
+  end
 
-    def compare(pos1, pos2)
-      @data[pos2].last < @data[pos1].last
-    end
+  private
 
-    def swap(pos1, pos2)
-      @data[pos1], @data[pos2] = @data[pos2], @data[pos1]
+  def heapify(enum)
+    @data = enum.to_a
+    (size / 2).downto(0).each do |idx|
+      sift_down(idx)
     end
   end
 
+  def sift_up(pos)
+    while pos > 0
+      parent = ((pos + 1) / 2) - 1
+      if compare(parent, pos)
+        swap(parent, pos)
+        pos = parent
+      else
+        return
+      end
+    end
+  end
+
+  def sift_down(pos)
+    loop do
+      left = ((pos + 1) * 2) - 1
+      right = left + 1
+      next_child = left
+      break if left >= size
+      if right < size
+        next_child = right unless compare(right, left)
+      end
+      break if compare(next_child, pos)
+      swap(next_child, pos)
+      pos = next_child
+    end
+  end
+
+  def compare(pos1, pos2)
+    @data[pos2].last < @data[pos1].last
+  end
+
+  def swap(pos1, pos2)
+    @data[pos1], @data[pos2] = @data[pos2], @data[pos1]
+  end
 end
 
 profile = false
@@ -386,6 +435,11 @@ when 'shortest_paths'
     v == Graph::Infinity ? ?* :
       v == -Graph::Infinity ? ?- : v
   }
+when 'connecting_points'
+  graph = Graph.load_connected_coords(STDIN)
+  mst = graph.kruskal
+  total = mst.reduce(0) {|sum, edge | sum += edge.weight}
+  printf("%.7f", total)
 end
 
 if profile
