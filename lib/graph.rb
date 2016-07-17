@@ -258,7 +258,7 @@ class Graph
 
   def kruskal
     forrest = DisjointSets.new(vertices)
-    mst = Set.new
+    mst = []
     weighted_edges = MinHeap.new(edges.map{|e| [e, e.weight]})
     while (edge = weighted_edges.pop) do
       if (a = forrest.find(edge.a)) != (b = forrest.find(edge.b))
@@ -440,6 +440,13 @@ when 'connecting_points'
   mst = graph.kruskal
   total = mst.reduce(0) {|sum, edge | sum += edge.weight}
   printf("%.7f", total)
+when 'clustering'
+  graph = Graph.load_connected_coords(STDIN)
+  mst = graph.kruskal
+  k = STDIN.readline.to_i
+  min_edge = mst.last(k-1).first
+  printf("%.7f", min_edge.weight)
+
 end
 
 if profile
