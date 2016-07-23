@@ -2,6 +2,21 @@ require './lib/graph'
 
 describe Graph do
 
+  describe ".load_connected_coords" do
+    it "converts the coordinate pairs into a fully connected graph" do
+      data = StringIO.new <<EOT
+4
+0 0
+0 1
+1 0
+1 1
+EOT
+      subject = described_class.load_connected_coords(data)
+      expect(subject.vertices).to contain_exactly(1, 2, 3, 4)
+      expect(subject.edges.map(&:weight)).to contain_exactly(1, 1, 1, 1, Math.sqrt(2), Math.sqrt(2))
+    end
+  end
+
   describe '#reachable?' do
     it 'returns true if v2 is reachable from v1' do
       subject = described_class.load StringIO.new <<EOT

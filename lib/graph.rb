@@ -25,16 +25,15 @@ class Graph
 
   def self.load_connected_coords(stream)
     points = stream.readline.to_i
-    vertices = Set.new(1..points)
     coords = stream.take(points).map {|l| l.split.map(&:to_i)}
+    coords.unshift(nil) # use 1-based index
+    vertices = Set.new(1..points)
     edges = Set.new()
-    coords.each_with_index do |a, i|
-      coords.each_with_index do |b, j|
-        break if a == b
-        dist = Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
-        edge = Edge.new(i+1, j+1, dist)
-        edges << edge
-      end
+    vertices.to_a.combination(2) do |a, b|
+      (x1, y1) = coords[a]
+      (x2, y2) = coords[b]
+      dist = Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+      edges << Edge.new(a, b, dist)
     end
     self.new(vertices, edges, false)
   end
