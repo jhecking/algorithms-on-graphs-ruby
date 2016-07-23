@@ -268,6 +268,26 @@ class Graph
     return mst
   end
 
+  def prim
+    mst = []
+    cost = vertices.inject({}) { |h, v| h[v] = Infinity; h }
+    parent = {}
+    cost[1] = 0
+    queue = MinHeap.new(vertices.map{|v| [v, cost[v]]})
+    while (v = queue.pop) do
+      edges_from[v].each do |e|
+        z = e.b
+        if queue.include?(z) && cost[z] > e.weight
+          mst << e
+          cost[z] = e.weight
+          parent[z] = v
+          queue.update(z, cost[z])
+        end
+      end
+    end
+    mst
+  end
+
   def to_dot
     dot = StringIO.new
     type = directed? ? "digraph" : "graph"
@@ -333,6 +353,12 @@ class MinHeap
     sift_up(@data.length - 1)
   end
 
+  def update(key, value)
+    idx = @data.find_index{|k,_| k == key}
+    @data[idx][1] = value
+    sift_up(idx)
+  end
+
   def pop
     return nil if empty?
     return @data.pop.first if size == 1
@@ -341,6 +367,11 @@ class MinHeap
     sift_down(0)
     return retval.first
   end
+
+  def include?(key)
+    @data.any?{|k,_| k == key}
+  end
+
 
   private
 
