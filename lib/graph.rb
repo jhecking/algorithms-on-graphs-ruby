@@ -443,7 +443,7 @@ when 'bipartite'
 when 'connected_components'
   puts Graph.load(STDIN, false).connected_components.length
 when 'djikstra'
-  graph = Graph.load(STDIN)
+  graph = Graph.load(STDIN, true)
   (s, t) = STDIN.readline.split.map(&:to_i)
   (dist, _) = graph.djikstra(s)
   puts (d = dist[t]) == Graph::Infinity ? "-1" : d
