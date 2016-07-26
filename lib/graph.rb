@@ -273,7 +273,7 @@ class Graph
     cost = vertices.inject({}) { |h, v| h[v] = Infinity; h }
     parent = {}
     cost[1] = 0
-    queue = MinHeap.new(vertices.map{|v| [v, cost[v]]})
+    queue = MinHeap.new(vertices.map{|v| [v, cost[v]]}, index: true)
     while (v = queue.pop) do
       mst << Edge.new(parent[v], v, cost[v]) if parent[v]
       edges_from[v].each do |e|
@@ -341,8 +341,12 @@ class DisjointSets
 end
 
 class MinHeap
-  def initialize(enumerable)
+
+  attr_accessor :index
+
+  def initialize(enumerable, index: false)
     heapify(enumerable)
+    self.index = index ? {} : nil
   end
 
   def empty?
@@ -355,13 +359,14 @@ class MinHeap
 
   def insert(key, value)
     @data << [key, value]
+    index[key] == (@data.length - 1) if indexed?
     sift_up(@data.length - 1)
   end
 
   def update(key, value)
-    idx = @data.find_index{|k,_| k == key}
-    @data[idx][1] = value
-    sift_up(idx)
+    i = indexed? ? index[key] : @data.find_index{|k,_| k == key}
+    @data[i][1] = value
+    sift_up(i)
   end
 
   def pop
@@ -374,14 +379,18 @@ class MinHeap
   end
 
   def include?(key)
-    @data.any?{|k,_| k == key}
+    indexed? && index.has_key?(key)
   end
-
 
   private
 
+  def indexed?
+    !!index
+  end
+
   def heapify(enum)
     @data = enum.to_a
+    @index = @data.each_with_index.reduce({}){|h, (e, i)| h[e] = i; h} if indexed?
     (size / 2).downto(0).each do |idx|
       sift_down(idx)
     end
@@ -419,6 +428,7 @@ class MinHeap
   end
 
   def swap(pos1, pos2)
+    self.index[@data[pos1]], self.index[@data[pos2]] = pos2, pos1 if indexed?
     @data[pos1], @data[pos2] = @data[pos2], @data[pos1]
   end
 end
