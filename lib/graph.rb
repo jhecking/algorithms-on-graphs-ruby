@@ -288,6 +288,11 @@ class Graph
     mst
   end
 
+  def minimum_spanning_tree(alg = ENV.fetch("MST", :kruskal))
+    #puts "Using #{alg.to_s.capitalize} algorith to determine MST"
+    self.class.instance_method(alg).bind(self).call
+  end
+
   def to_dot
     dot = StringIO.new
     type = directed? ? "digraph" : "graph"
@@ -467,15 +472,15 @@ when 'shortest_paths'
   }
 when 'connecting_points'
   graph = Graph.load_connected_coords(STDIN)
-  mst = graph.kruskal
+  mst = graph.minimum_spanning_tree
   total = mst.reduce(0) {|sum, edge | sum += edge.weight}
-  printf("%.7f", total)
+  printf("%.7f\n", total)
 when 'clustering'
   graph = Graph.load_connected_coords(STDIN)
-  mst = graph.kruskal
+  mst = graph.minimum_spanning_tree
   k = STDIN.readline.to_i
   min_edge = mst.last(k-1).first
-  printf("%.7f", min_edge.weight)
+  printf("%.7f\n", min_edge.weight)
 
 end
 
