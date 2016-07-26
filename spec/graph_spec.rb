@@ -281,6 +281,26 @@ EOT
     end
   end
 
+  describe "#kruskal" do
+    it "returns a minimum spanning tree" do
+      data = StringIO.new <<EOT
+5
+0 0
+0 2
+1 1
+3 0
+3 2
+EOT
+      subject = described_class.load_connected_coords(data)
+      mst = subject.kruskal
+      expect(mst.size).to eq(4)
+      vertices = mst.reduce(Set.new){|v, e| v += Set.new([e.a, e.b])}
+      expect(vertices).to contain_exactly(1, 2, 3, 4, 5)
+      weight = mst.reduce(0){|sum, e| sum += e.weight}
+      expect(weight).to be_within(0.0001).of(7.0645)
+    end
+  end
+
   describe "#prim" do
     it "returns a minimum spanning tree" do
       data = StringIO.new <<EOT
