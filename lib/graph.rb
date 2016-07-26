@@ -66,7 +66,7 @@ class Graph
       end
       edges.each do |e|
         edges_by_vertex[e.a] << e
-        edges_by_vertex[e.b] << e unless directed?
+        edges_by_vertex[e.b] << Edge.new(e.b, e.a, e.weight) unless directed?
       end
       edges_by_vertex
     end
@@ -275,10 +275,10 @@ class Graph
     cost[1] = 0
     queue = MinHeap.new(vertices.map{|v| [v, cost[v]]})
     while (v = queue.pop) do
+      mst << Edge.new(parent[v], v, cost[v]) if parent[v]
       edges_from[v].each do |e|
         z = e.b
         if queue.include?(z) && cost[z] > e.weight
-          mst << e
           cost[z] = e.weight
           parent[z] = v
           queue.update(z, cost[z])
